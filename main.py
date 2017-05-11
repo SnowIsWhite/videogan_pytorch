@@ -151,8 +151,9 @@ class Generator(nn.Module):
 discriminator = Discriminator()
 generator = Generator()
 
+#conv2d
 #loss and optimizer
-criterion = nn.CrossEntropyLoss()
+loss_function = nn.CrossEntropyLoss()
 d_optim = torch.optim.Adam(discriminator.parameters(), lr=lr)
 g_optim = torch.optim.Adam(generator.parameters(), lr=lr)
 
@@ -160,9 +161,48 @@ g_optim = torch.optim.Adam(generator.parameters(), lr=lr)
 TODO: regularizer needs to be implemented
 """
 
-#Trainig
-#for epoch in range(100):
-#    for i, 
+#Trainig videos: batch, 
+for epoch in range(100):
+    for i, videos in enumerate(load_data):
+        videos = Variable(videos)
+        temp = videos.view(videos.size(2),-1)
+        images = Variable(temp[0]) #batch, first frame
+
+        real_labels = Variable(torch.ones(videos.size(0)))
+        fake_labels = Variable(torch.zeros(videos.size(0)))
+
+        #train discriminator
+        discriminator.zero_grad()
+        outputs = discriminator(video)
+        real_loss = loss_function(outputs, real_labels)
+        real_score = outputs
+
+        fake_videos = generator(images)
+        outputs = discriminator(fake_videos.detach())
+        fake_loss = loss_function(outputs, fake_labels)
+        fake_score = outputs
+
+        d_loss = real_loss + fake_loss
+        d_loss.backward()
+        d_optim.step()
+
+        #train generator
+        generator.zero_grad()
+        fake_videos = generator(images)
+        outputs = discriminator(fake_videos)
+        g_loss = loss_function(outputs, real_labels)
+        g_loss.backward()
+        g_optim.step()
+
+        if (i+1)%10 ==0:
+            print('Epoch [%d/%d], Step[%d/%d], d_loss: %.4f, g_loss: %.4f, '
+                    'D(x): %2.f, D(G(x)): %.2f'
+                    %(epoch, 50, i+1, 500, d_loss.data[0], g_loss.data[0],
+                        real_score.data.mean(), fake_score.data.mean()))
+
+            # save data
+            
+
 
             
 
