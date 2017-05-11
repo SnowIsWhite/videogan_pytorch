@@ -25,10 +25,11 @@ class Discriminator(nn.Module):
                 conv3d(512,1024),
                 lrelu(0.2),
                 batchNorm5d(1024,1e-3),
+                conv3d(1024,2, (2,4,4), (1,1,1), (0,0,0))
                 )
 
     def forward(self, x):
-        out = model(x)
+        out = self.model(x)
         return out
 
 class encode_net(nn.Module):
@@ -48,7 +49,7 @@ class encode_net(nn.Module):
                 batchNorm4d(1024,1e-3)
                 )
     def forward(self,x):
-        out = model(x)
+        out = self.model(x)
         return out
 
 #deconv2d
@@ -68,7 +69,7 @@ class static_net(nn.Module):
                 deconv2d(128,3)
                 )
     def forward(self,x):
-        out = model(x)
+        out = self.model(x)
         return out
 
 #deconv3d
@@ -140,9 +141,9 @@ class Generator(nn.Module):
                 self.mask_net_
                 )
     def forward(self,x):
-        out_static = static(x) #batch, 3, 64, 64
-        out_fore = fore(x) #batch, 3, 32, 64, 64
-        out_mask = mask(x) #batch, 1, 32, 64, 64
+        out_static = self.static(x) #batch, 3, 64, 64
+        out_fore = self.fore(x) #batch, 3, 32, 64, 64
+        out_mask = self.mask(x) #batch, 1, 32, 64, 64
         gen1 = out_mask.expand_as(out_fore)*out_fore
         gen2 = (torch.ones(out_mask.size(0),1,32,64,64) - out_mask).expand_as(out_fore) * out_static.unsqueeze(2).expand_as(out_fore)
         gen = gen1+gen2
@@ -153,6 +154,7 @@ generator = Generator()
 
 #conv2d
 #loss and optimizer
+#loss_function = nn.BCELoss()
 loss_function = nn.CrossEntropyLoss()
 d_optim = torch.optim.Adam(discriminator.parameters(), lr=lr)
 g_optim = torch.optim.Adam(generator.parameters(), lr=lr)
@@ -161,24 +163,28 @@ g_optim = torch.optim.Adam(generator.parameters(), lr=lr)
 TODO: regularizer needs to be implemented
 """
 
+load_data = torch.randn(10,32,3,32,64,64)
+
 #Trainig videos: batch, 
 for epoch in range(100):
     for i, videos in enumerate(load_data):
+        temp = videos.permute(2,0,1,3,4)
         videos = Variable(videos)
-        temp = videos.view(videos.size(2),-1)
         images = Variable(temp[0]) #batch, first frame
 
         real_labels = Variable(torch.ones(videos.size(0)))
         fake_labels = Variable(torch.zeros(videos.size(0)))
-
+        print("Training..")
         #train discriminator
         discriminator.zero_grad()
-        outputs = discriminator(video)
+        outputs = discriminator(videos).squeeze()
+        print(outputs.size())
+        print(real_labels.size())
         real_loss = loss_function(outputs, real_labels)
         real_score = outputs
 
         fake_videos = generator(images)
-        outputs = discriminator(fake_videos.detach())
+        outputs = discriminator(fake_videos.detach()).squeeze()
         fake_loss = loss_function(outputs, fake_labels)
         fake_score = outputs
 
@@ -189,7 +195,7 @@ for epoch in range(100):
         #train generator
         generator.zero_grad()
         fake_videos = generator(images)
-        outputs = discriminator(fake_videos)
+        outputs = discriminator(fake_videos).squeeze()
         g_loss = loss_function(outputs, real_labels)
         g_loss.backward()
         g_optim.step()
