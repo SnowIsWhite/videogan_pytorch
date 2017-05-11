@@ -33,7 +33,7 @@ class Discriminator(nn.Module):
 
 class encode_net(nn.Module):
     def __init__(self):
-        super(CNN, self).__init__()
+        super(encode_net, self).__init__()
         self.model = nn.Sequential(
                 conv2d(3,128),
                 relu(),
@@ -54,7 +54,7 @@ class encode_net(nn.Module):
 #deconv2d
 class static_net(nn.Module):
     def __init__(self):
-        super(CNN, self).__init__()
+        super(static_net, self).__init__()
         self.model = nn.Sequential(
                 deconv2d(1024,512),
                 relu(),
@@ -74,9 +74,9 @@ class static_net(nn.Module):
 #deconv3d
 class net_video(nn.Module):
     def __init__(self):
-        super(CNN, self).__init__()
+        super(net_video, self).__init__()
         self.model = nn.Sequential(
-                deconv3d(1024,1024, kernel_size = (2,1,1)),
+                deconv3d(1024,1024, kernel_size = (2,1,1), stride = 2),
                 relu(),
                 batchNorm5d(1024),
                 deconv3d(1024,512),
@@ -96,7 +96,7 @@ class net_video(nn.Module):
 
 class mask_net(nn.Module):
     def __init__(self):
-        super(CNN, self).__init__()
+        super(mask_net, self).__init__()
         self.model = nn.Sequential(
                 nn.Sigmoid(),
                 deconv3d(128,1)
@@ -107,7 +107,7 @@ class mask_net(nn.Module):
 
 class fore_net(nn.Module):
     def __init__(self):
-        super(CNN, self).__init__()
+        super(fore_net, self).__init__()
         self.model = nn.Sequential(
                 nn.Tanh(),
                 deconv3d(128,3)

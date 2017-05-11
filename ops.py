@@ -15,7 +15,7 @@ def deconv2d(in_channels, out_channels, kernel_size = 4, stride = 2, padding = 1
     return nn.ConvTranspose2d(in_channels, out_channels, kernel_size = kernel_size, stride = stride, padding = padding, bias = True)
 
 #deconv3d
-def deconv3d(in_channels, out_channels, kernel_size = 4, sride = 2, padding = 1):
+def deconv3d(in_channels, out_channels, kernel_size = 4, stride = 2, padding = 1):
     return nn.ConvTranspose3d(in_channels, out_channels, kernel_size = kernel_size, stride = stride, padding = padding, bias = True)
 
 #batchnorm
