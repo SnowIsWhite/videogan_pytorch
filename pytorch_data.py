@@ -12,7 +12,11 @@ transform = transforms.Compose([
 
 
 def get_batch(batch_size):
-	dataset = dset.ImageFolder(root='/Users/kabir/Documents/SP17/Research/pytorch_videogan',
+	dataset_dir='/Users/kabir/Documents/SP17/Research/pytorch_videogan'
+	folder_index_file='data/beach.txt'
+	#with open(folder_index_file, 'r') as f:
+	#
+	dataset = dset.ImageFolder(root=dataset_dir,
 	                           transform=transform)
 	assert dataset
 	dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
@@ -23,9 +27,14 @@ def get_batch(batch_size):
 	batch = []
 	for v in xrange(batch_size):
 		video = []
+		cached_image = None
 		for x in xrange(frame_size):
-			images, labels = dataiter.next()
-			video.append(images)
+			try:
+				images, labels = dataiter.next()
+				video.append(images)
+				cached_image = images
+			except StopIteration:
+				video.append(cached_image)
 		batch.append(torch.stack(video))
 
 	return torch.stack(batch)
