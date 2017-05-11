@@ -180,7 +180,7 @@ for epoch in range(100):
         outputs = discriminator(videos).squeeze()
         print(outputs.size())
         print(real_labels.size())
-        real_loss = loss_function(outputs, real_labels)
+        real_loss = loss_function(outputs, real_labels.long())
         real_score = outputs
 
         fake_videos = generator(images)
@@ -196,7 +196,7 @@ for epoch in range(100):
         generator.zero_grad()
         fake_videos = generator(images)
         outputs = discriminator(fake_videos).squeeze()
-        g_loss = loss_function(outputs, real_labels)
+        g_loss = loss_function(outputs, real_labels.long())
         g_loss.backward()
         g_optim.step()
 
