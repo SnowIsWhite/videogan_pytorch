@@ -18,7 +18,7 @@ def get_batch(batch_size):
 	dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
                                          shuffle=True, num_workers=int(2))
 
-	frame_size = 2
+	frame_size = 32
 	dataiter = iter(dataloader)
 	batch = []
 	for v in xrange(batch_size):
