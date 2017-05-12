@@ -134,6 +134,12 @@ class Generator(nn.Module):
         self.mask_net_ = mask_net()
         self.fore_net_ = fore_net()
         
+        self.encode_net_.cuda()
+        self.net_video_.cuda()
+        self.static_mdet_.cuda()
+        self.mask_net_.cuda()
+        self.fore_net_.cuda()
+      
     def forward(self,x):
         print("Enter G_forward")
         print("Generating out1")
@@ -165,8 +171,8 @@ class Generator(nn.Module):
 
 discriminator = Discriminator()
 generator = Generator()
-discriminator
-generator
+discriminator.cuda()
+generator.cuda()
 
 #conv2d
 #loss and optimizer
@@ -177,22 +183,23 @@ d_optim = torch.optim.Adam(discriminator.parameters(), lr=lr)
 g_optim = torch.optim.Adam(generator.parameters(), lr=lr)
 
 load_data = get_batch(batchSize)
-print(load_data.size())
-print("Data load complete.")
-print("Training..")
+print("Data load Complete.")
 #Trainig videos: batch, 
 for epoch in range(100):
     for i, videos in enumerate(load_data):
         temp = videos.permute(2,0,1,3,4)
-        videos = Variable(videos)
-        images = Variable(temp[0]) #batch, first frame
+        videos = Variable(videos.cuda())
+        images = Variable(temp[0].cuda()) #batch, first frame
         
-        real_labels = Variable(torch.LongTensor(np.ones(batchSize, dtype = int)))
-        fake_labels = Variable(torch.LongTensor(np.zeros(batchSize, dtype = int)))
-
+        real_labels = Variable(torch.LongTensor(np.ones(batchSize, dtype = int))).cuda()
+        fake_labels = Variable(torch.LongTensor(np.zeros(batchSize, dtype = int))).cuda()
+        print("Training..")
         #train discriminator
+        print("train discriminator..")
         discriminator.zero_grad()
         outputs = discriminator(videos).squeeze()
+        print(outputs.size())
+        print(real_labels.size())
         real_loss = loss_function(outputs, real_labels.long())
 
         real_score = outputs
@@ -207,6 +214,7 @@ for epoch in range(100):
         d_optim.step()
         
         #train generator
+        print("train generator..")
         generator.zero_grad()
         fake_videos = generator(images)
         outputs = discriminator(fake_videos).squeeze()
@@ -215,12 +223,13 @@ for epoch in range(100):
         g_optim.step()
 
         #reg loss
+        print("reg loss..")
         reg_loss = reg_loss_function(videos[0], fake_videos[0])
         if True:#(i+1)%10 ==0:
             print('Epoch [%d/%d], Step[%d/%d], d_loss: %.4f, g_loss: %.4f, '
                     'D(x): %2.f, D(G(x)): %.2f'
                     %(epoch, 50, i+1, 500, d_loss.data[0], g_loss.data[0],
-                        real_score.data.mean(), fake_score.data.mean()))
+                        real_score.cpu().data.mean(), fake_score.cpu().data.mean()))
 
             # save data(gif?)
 
