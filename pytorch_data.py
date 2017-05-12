@@ -14,8 +14,14 @@ transform = transforms.Compose([
 def get_batch(batch_size):
 	dataset_dir='/Users/kabir/Documents/SP17/Research/pytorch_videogan'
 	folder_index_file='data/beach.txt'
-	#with open(folder_index_file, 'r') as f:
-	#
+	
+	'''
+	with open(folder_index_file, 'r') as f:
+		lines = f.readlines()
+		for line in lines:
+			tokens = line.split('/')
+
+	'''
 	dataset = dset.ImageFolder(root=dataset_dir,
 	                           transform=transform)
 	assert dataset

@@ -134,22 +134,32 @@ class Generator(nn.Module):
         self.fore_net_ = fore_net()
       
     def forward(self,x):
+        print("Enter G_forward")
+        print("Generating out1")
         out1 = self.encode_net_(x)
+        print("Generating out_static")
         out_static = self.static_net_(out1)
+        print("Generating out2")
         out2 = self.net_video_(out1)
+        print("Generating out_fore")
         out_fore = self.fore_net_(out2)
+        print("Generating out_mask")
         out_mask = self.mask_net_(out2)
-        
         """
         out_static  #batch, 3, 64, 64
         out_fore    #batch, 3, 32, 64, 64
         out_mask    #batch, 1, 32, 64, 64
         """
+        print("Generating gen1")
         gen1 = out_mask.expand_as(out_fore)*out_fore
+        print("Generating mul1")
         mul1 =(np.ones_like(out_mask) - out_mask).expand_as(out_fore)
+        print("Generating mul2")
         mul2 = out_static.unsqueeze(2).expand_as(out_fore)
+        print("Generating gen2")
         gen2 = mul1*mul2
         gen = gen1+gen2
+        print("Leave G_forward")
         return gen
 
 discriminator = Discriminator()
@@ -176,6 +186,7 @@ for epoch in range(100):
         fake_labels = Variable(torch.LongTensor(np.zeros(batchSize, dtype = int)))
         print("Training..")
         #train discriminator
+        print("train discriminator..")
         discriminator.zero_grad()
         outputs = discriminator(videos).squeeze()
         print(outputs.size())
@@ -194,6 +205,7 @@ for epoch in range(100):
         d_optim.step()
         
         #train generator
+        print("train generator..")
         generator.zero_grad()
         fake_videos = generator(images)
         outputs = discriminator(fake_videos).squeeze()
@@ -202,8 +214,9 @@ for epoch in range(100):
         g_optim.step()
 
         #reg loss
+        print("reg loss..")
         reg_loss = reg_loss_function(videos[0], fake_videos[0])
-        if (i+1)%10 ==0:
+        if True:#(i+1)%10 ==0:
             print('Epoch [%d/%d], Step[%d/%d], d_loss: %.4f, g_loss: %.4f, '
                     'D(x): %2.f, D(G(x)): %.2f'
                     %(epoch, 50, i+1, 500, d_loss.data[0], g_loss.data[0],
