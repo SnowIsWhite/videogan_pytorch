@@ -193,6 +193,7 @@ for epoch in range(100):
         
         real_labels = Variable(torch.LongTensor(np.ones(batchSize, dtype = int))).cuda()
         fake_labels = Variable(torch.LongTensor(np.zeros(batchSize, dtype = int))).cuda()
+        npones = Variable(torch.LongTensor(np.ones(batchSize, 1, 32, 64, 64, dtype = int)).cuda())
         print("Training..")
         #train discriminator
         print("train discriminator..")
@@ -204,7 +205,7 @@ for epoch in range(100):
 
         real_score = outputs
     
-        fake_videos = generator(images) #gets amazingly slow on my labtop
+        fake_videos = generator(images,npones) #gets amazingly slow on my labtop
         outputs = discriminator(fake_videos.detach()).squeeze()
         fake_loss = loss_function(outputs, fake_labels)
         fake_score = outputs
@@ -215,9 +216,8 @@ for epoch in range(100):
         
         #train generator
         print("train generator..")
-        npones = np.ones(batchSize, 1, 32, 64, 64)
         generator.zero_grad()
-        fake_videos = generator(images, npones.cpu())
+        fake_videos = generator(images, npones)
         outputs = discriminator(fake_videos).squeeze()
         g_loss = loss_function(outputs, real_labels.long())
         g_loss.backward()
