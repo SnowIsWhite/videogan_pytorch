@@ -200,10 +200,6 @@ for epoch in range(100):
         real_score = outputs
     
         fake_videos = generator(images) #gets amazingly slow on my labtop
-        if not os.path.isdir('videos/'):
-            os.mkdir('videos')
-        with open('videos' + time.strftime('%s'), 'wb') as f:
-            pickle.dump(fake_videos, f)
         outputs = discriminator(fake_videos.detach()).squeeze()
         fake_loss = loss_function(outputs, fake_labels)
         fake_score = outputs
@@ -229,6 +225,10 @@ for epoch in range(100):
                         real_score.data.mean(), fake_score.data.mean()))
 
             # save data(gif?)
+        if not os.path.isdir('videos/'):
+            os.mkdir('videos')
+        with open('videos' + time.strftime('%s'), 'wb') as f:
+            pickle.dump(fake_videos, f)
 
 
 #save model
