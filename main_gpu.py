@@ -231,8 +231,11 @@ for epoch in range(100):
                     %(epoch, 50, i+1, 500, d_loss.data[0], g_loss.data[0],
                         real_score.cpu().data.mean(), fake_score.cpu().data.mean()))
 
-            # save data(gif?)
-
+        # save data(gif?)
+        if not os.path.isdir('videos/'):
+            os.mkdir('videos')
+        with open('videos' + time.strftime('%s') + '.pkl', 'wb') as f:
+            pickle.dump(fake_videos, f)
 
 #save model
 torch.save(generator.state_dict(), './generator.pkl')
