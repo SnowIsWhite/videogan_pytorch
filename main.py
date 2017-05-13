@@ -2,6 +2,7 @@ import torch
 import torchvision
 import torch.nn as nn
 import numpy as np
+import os
 from torch.autograd import Variable
 from ops import*
 from pytorch_data import*
@@ -154,6 +155,7 @@ class Generator(nn.Module):
         print("Generating gen1")
         gen1 = out_mask.expand_as(out_fore)*out_fore
         print("Generating mul1")
+        #print(out_mask, out_fore)
         mul1 =(np.ones_like(out_mask) - out_mask).expand_as(out_fore)
         print("Generating mul2")
         mul2 = out_static.unsqueeze(2).expand_as(out_fore)
@@ -176,7 +178,7 @@ reg_loss_function = nn.L1Loss()
 d_optim = torch.optim.Adam(discriminator.parameters(), lr=lr)
 g_optim = torch.optim.Adam(generator.parameters(), lr=lr)
 
-load_data = get_batch(batchSize)
+load_data = torch.rand(10,32,3,32,64,64)
 print(load_data.size())
 print("Data load complete.")
 print("Training..")
@@ -198,6 +200,10 @@ for epoch in range(100):
         real_score = outputs
     
         fake_videos = generator(images) #gets amazingly slow on my labtop
+        if not os.path.isdir('videos/'):
+            os.mkdir('videos')
+        with open('videos' + time.strftime('%s'), 'wb') as f:
+            pickle.dump(fake_videos, f)
         outputs = discriminator(fake_videos.detach()).squeeze()
         fake_loss = loss_function(outputs, fake_labels)
         fake_score = outputs
