@@ -37,6 +37,7 @@ class Discriminator(nn.Module):
                 )
 
     def forward(self, x):
+        print x
         out = self.model(x)
         return out
 
@@ -136,7 +137,7 @@ class Generator(nn.Module):
         
         self.encode_net_.cuda()
         self.net_video_.cuda()
-        self.static_mdet_.cuda()
+        self.static_net_.cuda()
         self.mask_net_.cuda()
         self.fore_net_.cuda()
       
@@ -150,6 +151,8 @@ class Generator(nn.Module):
         out2 = self.net_video_(out1)
         print("Generating out_fore")
         out_fore = self.fore_net_(out2)
+        #print out_fore
+        #out_fore = Variable(torch.FloatTensor(out_fore).cuda())
         print("Generating out_mask")
         out_mask = self.mask_net_(out2)
         """
@@ -160,10 +163,20 @@ class Generator(nn.Module):
         print("Generating gen1")
         gen1 = out_mask.expand_as(out_fore)*out_fore
         print("Generating mul1")
-        mul1 =(np.ones_like(out_mask) - out_mask).expand_as(out_fore)
+        ones_like = torch.ones(out_mask.size())
+        ones_like = Variable(torch.FloatTensor(ones_like).cuda())
+        #print(ones_like)
+        ones_like.expand_as(out_fore)
+        print("expanding 2")
+        out_mask.expand_as(out_fore)
+        print("subtract")
+        mul1 =(ones_like - out_mask).expand_as(out_fore)
+        #mul1 = out_fore
         print("Generating mul2")
         mul2 = out_static.unsqueeze(2).expand_as(out_fore)
         print("Generating gen2")
+        print mul1.size()
+        print mul2.size()
         gen2 = mul1*mul2
         gen = gen1+gen2
         print("Leave G_forward")
@@ -182,7 +195,7 @@ reg_loss_function = nn.L1Loss()
 d_optim = torch.optim.Adam(discriminator.parameters(), lr=lr)
 g_optim = torch.optim.Adam(generator.parameters(), lr=lr)
 
-load_data = get_batch(batchSize)
+load_data = torch.rand(10,32,3,32,64,64)
 print("Data load Complete.")
 #Trainig videos: batch, 
 for epoch in range(100):
@@ -217,7 +230,7 @@ for epoch in range(100):
         print("train generator..")
         generator.zero_grad()
         fake_videos = generator(images)
-        outputs = discriminator(fake_videos).squeeze()
+        outputs = discriminator(fake_videos.detach()).squeeze()
         g_loss = loss_function(outputs, real_labels.long())
         g_loss.backward()
         g_optim.step()
