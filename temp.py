@@ -37,7 +37,6 @@ class Discriminator(nn.Module):
                 )
 
     def forward(self, x):
-        print x
         out = self.model(x)
         return out
 
@@ -137,11 +136,11 @@ class Generator(nn.Module):
         
         self.encode_net_.cuda()
         self.net_video_.cuda()
-        self.static_net_.cuda()
+        self.static_mdet_.cuda()
         self.mask_net_.cuda()
         self.fore_net_.cuda()
       
-    def forward(self,x):
+    def forward(self,x,npones):
         print("Enter G_forward")
         print("Generating out1")
         out1 = self.encode_net_(x)
@@ -151,8 +150,6 @@ class Generator(nn.Module):
         out2 = self.net_video_(out1)
         print("Generating out_fore")
         out_fore = self.fore_net_(out2)
-        #print out_fore
-        #out_fore = Variable(torch.FloatTensor(out_fore).cuda())
         print("Generating out_mask")
         out_mask = self.mask_net_(out2)
         """
@@ -163,20 +160,10 @@ class Generator(nn.Module):
         print("Generating gen1")
         gen1 = out_mask.expand_as(out_fore)*out_fore
         print("Generating mul1")
-        ones_like = torch.ones(out_mask.size())
-        ones_like = Variable(torch.FloatTensor(ones_like).cuda())
-        #print(ones_like)
-        ones_like.expand_as(out_fore)
-        print("expanding 2")
-        out_mask.expand_as(out_fore)
-        print("subtract")
-        mul1 =(ones_like - out_mask).expand_as(out_fore)
-        #mul1 = out_fore
+        mul1 =(npones - out_mask).expand_as(out_fore)
         print("Generating mul2")
         mul2 = out_static.unsqueeze(2).expand_as(out_fore)
         print("Generating gen2")
-        print mul1.size()
-        print mul2.size()
         gen2 = mul1*mul2
         gen = gen1+gen2
         print("Leave G_forward")
@@ -195,7 +182,7 @@ reg_loss_function = nn.L1Loss()
 d_optim = torch.optim.Adam(discriminator.parameters(), lr=lr)
 g_optim = torch.optim.Adam(generator.parameters(), lr=lr)
 
-load_data = torch.rand(10,32,3,32,64,64)
+load_data = get_batch(batchSize)
 print("Data load Complete.")
 #Trainig videos: batch, 
 for epoch in range(100):
@@ -206,6 +193,7 @@ for epoch in range(100):
         
         real_labels = Variable(torch.LongTensor(np.ones(batchSize, dtype = int))).cuda()
         fake_labels = Variable(torch.LongTensor(np.zeros(batchSize, dtype = int))).cuda()
+        npones = Variable(torch.LongTensor(np.ones(batchSize, 1, 32, 64, 64, dtype = int)).cuda())
         print("Training..")
         #train discriminator
         print("train discriminator..")
@@ -217,7 +205,7 @@ for epoch in range(100):
 
         real_score = outputs
     
-        fake_videos = generator(images) #gets amazingly slow on my labtop
+        fake_videos = generator(images,npones) #gets amazingly slow on my labtop
         outputs = discriminator(fake_videos.detach()).squeeze()
         fake_loss = loss_function(outputs, fake_labels)
         fake_score = outputs
@@ -229,8 +217,8 @@ for epoch in range(100):
         #train generator
         print("train generator..")
         generator.zero_grad()
-        fake_videos = generator(images)
-        outputs = discriminator(fake_videos.detach()).squeeze()
+        fake_videos = generator(images, npones)
+        outputs = discriminator(fake_videos).squeeze()
         g_loss = loss_function(outputs, real_labels.long())
         g_loss.backward()
         g_optim.step()
@@ -249,6 +237,7 @@ for epoch in range(100):
             os.mkdir('videos')
         with open('videos' + time.strftime('%s') + '.pkl', 'wb') as f:
             pickle.dump(fake_videos, f)
+
 
 #save model
 torch.save(generator.state_dict(), './generator.pkl')
